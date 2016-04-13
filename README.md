@@ -1,3 +1,3 @@
 # FritzBoxMonitor
 Utility for monitoring internet data use on residential connection that uses a FritzBox router.
-This utility should be executed on a periodic basis, e.g via cron job, via the bash script wrapper.
+This utility should be executed on a periodic basis, e.g via cron job, via the bash script wrapper. I have used an Anaconda virtual environment to set up all python package dependencies, though thisn't isn't necessary if you'd rather install into system python paths. If so then the shell script will need to be modified. The Python package fritzconnection is used which is available via pip install, or source and some documentation is available at https://bitbucket.org/kbr/fritzconnection.
