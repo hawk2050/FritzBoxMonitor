@@ -36,10 +36,10 @@ class FritzMonitorInternet(object):
         self.emailAlert.set_subject("FritzBox: Internet Alert!")
        
         self.last_date_and_time = None
-        self.last_fritzbox_traffic_counter_rx = None
-        self.last_fritzbox_traffic_counter_tx = None
-        self.fritzbox_traffic_counter_rx = self.status.bytes_received
-        self.fritzbox_traffic_counter_tx = self.status.bytes_sent
+        self.last_fritzbox_traffic_counter_rx_32bit = None
+        self.last_fritzbox_traffic_counter_tx_32bit = None
+        self.fritzbox_traffic_counter_rx_32bit = self.status.bytes_received
+        self.fritzbox_traffic_counter_tx_32bit = self.status.bytes_sent
         
         self.fritzbox_traffic_counter_at_last_alert_interval_tx = None
         self.fritzbox_traffic_counter_at_last_alert_interval_rx = None
@@ -70,12 +70,14 @@ class FritzMonitorInternet(object):
         
         tx_thresh = fritztools.format_num(self.tx_alert_threshold)
         rx_thresh = fritztools.format_num(self.rx_alert_threshold)
-        rx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_rx-self.billing_interval_ref_rx)
-        tx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_tx-self.billing_interval_ref_tx )
+        rx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_rx_32bit-self.billing_interval_ref_rx)
+        tx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_tx_32bit-self.billing_interval_ref_tx )
         alertText = 'Time since last check: {}\n\n'.format(self.delta_time.seconds)
         alertText += 'Alert Interval = {}\n\n'.format(self.alert_interval_seconds)
         alertText += 'Alert Threshold TX/RX = %s/%s\n\n' % (tx_thresh,rx_thresh)
         alertText += 'Timer Count = {}\n\n'.format(self.timer_count)
+        alertText += 'FritzBox register bytes_received: {}\n\n'.format(self.status.bytes_received)
+        alertText += 'FritzBox register bytes_sent: {}\n\n'.format(self.status.bytes_sent)
         alertText += 'During the last monitor interval %s have been received and %s has been transmitted\n\n' % (delta_received,delta_sent)
         #alertText += 'Total data sent: %s bytes\t Total data received = %s bytes\n\n' % (self.cummulative_tx,self.cummulative_rx)
         #alertText += 'Total data sent: %s\t Total data received = %s\n\n' % (total_sent,total_received)
@@ -91,12 +93,20 @@ class FritzMonitorInternet(object):
              
     def calculate_traffic_delta(self):
         self.read_last_traffic_count_from_file()
-        self.fritzbox_traffic_counter_rx = self.status.bytes_received
-        self.fritzbox_traffic_counter_tx = self.status.bytes_sent
+        #self.fritzbox_traffic_counter_rx_32bit = self.status.bytes_received
+        #self.fritzbox_traffic_counter_tx_32bit = self.status.bytes_sent
         self.date_and_time = datetime.datetime.now()
         
-        self.delta_rx = self.fritzbox_traffic_counter_rx - self.last_fritzbox_traffic_counter_rx
-        self.delta_tx = self.fritzbox_traffic_counter_tx - self.last_fritzbox_traffic_counter_tx
+        self.delta_rx = self.fritzbox_traffic_counter_rx_32bit - self.last_fritzbox_traffic_counter_rx_32bit
+        #Check to see if the 32 bit traffic counter in Fritzbox has wrapped and compensate
+        if self.delta_rx < 0:
+            self.delta_rx = self.delta_rx + pow(2,32)
+            
+        self.delta_tx = self.fritzbox_traffic_counter_tx_32bit - self.last_fritzbox_traffic_counter_tx_32bit
+        #Check to see if the 32 bit traffic counter in Fritzbox has wrapped and compensate
+        if self.delta_tx < 0:
+            self.delta_tx = self.delta_tx + pow(2,32)
+            
         self.delta_time = self.date_and_time - self.last_date_and_time
         
         self.timer_count += self.delta_time.seconds
@@ -105,11 +115,11 @@ class FritzMonitorInternet(object):
         #Internet plan data rollover date/time
         if self.date_and_time.day == 17:
             if ( (self.date_and_time.hour > 18) and (self.date_and_time.hour < 19) ):
-                rx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_rx-self.billing_interval_ref_rx)
-                tx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_tx-self.billing_interval_ref_tx )
+                rx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_rx_32bit-self.billing_interval_ref_rx)
+                tx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_tx_32bit-self.billing_interval_ref_tx )
                 
-                self.billing_interval_ref_tx = self.fritzbox_traffic_counter_tx
-                self.billing_interval_ref_rx = self.fritzbox_traffic_counter_rx
+                self.billing_interval_ref_tx = self.fritzbox_traffic_counter_tx_32bit
+                self.billing_interval_ref_rx = self.fritzbox_traffic_counter_rx_32bit
                 alertText = 'Internet Account Billing Rollover\n\n'
                 alertText += 'Billing Interval Start Values: Tx = {}\t Rx = {}\n\n'.format(self.billing_interval_ref_tx,self.billing_interval_ref_rx)
                 alertText += 'Total data during last billing interval : Data Sent = %s\t Data Received = %s' %(tx_billing_delta,rx_billing_delta)
@@ -125,8 +135,8 @@ class FritzMonitorInternet(object):
 	
         
         if self.timer_count >= self.alert_interval_seconds:
-            self.fritzbox_traffic_counter_at_this_alert_interval_tx = self.fritzbox_traffic_counter_tx
-            self.fritzbox_traffic_counter_at_this_alert_interval_rx = self.fritzbox_traffic_counter_rx
+            self.fritzbox_traffic_counter_at_this_alert_interval_tx = self.fritzbox_traffic_counter_tx_32bit
+            self.fritzbox_traffic_counter_at_this_alert_interval_rx = self.fritzbox_traffic_counter_rx_32bit
             
             self.delta_rx = self.fritzbox_traffic_counter_at_this_alert_interval_rx - self.fritzbox_traffic_counter_at_last_alert_interval_rx
             self.delta_tx = self.fritzbox_traffic_counter_at_this_alert_interval_tx - self.fritzbox_traffic_counter_at_last_alert_interval_tx
@@ -138,8 +148,8 @@ class FritzMonitorInternet(object):
                 alert_interval_rx = fritztools.format_num(self.delta_rx)
                 alert_interval_tx = fritztools.format_num(self.delta_tx)
                 
-                rx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_rx-self.billing_interval_ref_rx)
-                tx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_tx-self.billing_interval_ref_tx )
+                rx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_rx_32bit-self.billing_interval_ref_rx)
+                tx_billing_delta = fritztools.format_num(self.fritzbox_traffic_counter_tx_32bit-self.billing_interval_ref_tx )
                 alertText = 'Time since last check: {}\n\n'.format(self.delta_time)
                 alertText += 'During the last alert monitor interval %s have been received and %s has been transmitted\n\n' % (alert_interval_rx,alert_interval_tx)
                 
@@ -155,7 +165,7 @@ class FritzMonitorInternet(object):
             
     def write_current_traffic_count_to_file(self):        
         f = open("internet_traffic.pickle","w") #opens file with name of "test.txt"
-        pickle.dump([self.date_and_time, self.timer_count, self.fritzbox_traffic_counter_rx, self.fritzbox_traffic_counter_tx, self.fritzbox_traffic_counter_at_this_alert_interval_rx, self.fritzbox_traffic_counter_at_this_alert_interval_tx, self.billing_interval_ref_rx, self.billing_interval_ref_tx], f)
+        pickle.dump([self.date_and_time, self.timer_count, self.fritzbox_traffic_counter_rx_32bit, self.fritzbox_traffic_counter_tx_32bit, self.fritzbox_traffic_counter_at_this_alert_interval_rx, self.fritzbox_traffic_counter_at_this_alert_interval_tx, self.billing_interval_ref_rx, self.billing_interval_ref_tx], f)
         f.close()
         
     def read_last_traffic_count_from_file(self):
@@ -164,16 +174,16 @@ class FritzMonitorInternet(object):
                 data = pickle.load(f)
                 self.last_date_and_time = data[0]
                 self.timer_count = data[1]
-                self.last_fritzbox_traffic_counter_rx = data[2]
-                self.last_fritzbox_traffic_counter_tx = data[3]
+                self.last_fritzbox_traffic_counter_rx_32bit = data[2]
+                self.last_fritzbox_traffic_counter_tx_32bit = data[3]
                 self.fritzbox_traffic_counter_at_last_alert_interval_rx = data[4]
                 self.fritzbox_traffic_counter_at_last_alert_interval_tx = data[5]
                 self.billing_interval_ref_rx = data[6]
                 self.billing_interval_ref_tx = data[7]
                 f.close()
 #                print 'last_date_and_time = {}'.format(self.last_date_and_time)
-#                print 'last_fritzbox_traffic_counter_rx = {}'.format(self.last_fritzbox_traffic_counter_rx)
-#                print 'last_fritzbox_traffic_counter_tx = {}'.format(self.last_fritzbox_traffic_counter_tx)
+#                print 'last_fritzbox_traffic_counter_rx = {}'.format(self.last_fritzbox_traffic_counter_rx_32bit)
+#                print 'last_fritzbox_traffic_counter_tx = {}'.format(self.last_fritzbox_traffic_counter_tx_32bit)
 #                print 'cummulative rx = {}'.format(self.cummulative_rx)
 #                print 'cummulative tx = {}'.format(self.cummulative_tx)
 #                print 'Billing Interval Start Rx = {}'.format(self.billing_interval_ref_rx)
@@ -183,8 +193,8 @@ class FritzMonitorInternet(object):
             print 'internet_traffic.pickle file did not exist'
             self.last_date_and_time = self.date_and_time
             self.timer_count = 0
-            self.last_fritzbox_traffic_counter_rx = self.status.bytes_received
-            self.last_fritzbox_traffic_counter_tx = self.status.bytes_sent
+            self.last_fritzbox_traffic_counter_rx_32bit = self.status.bytes_received
+            self.last_fritzbox_traffic_counter_tx_32bit = self.status.bytes_sent
             self.billing_interval_ref_tx = self.status.bytes_sent
             self.billing_interval_ref_rx = self.status.bytes_received
             
