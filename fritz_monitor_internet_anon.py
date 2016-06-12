@@ -56,6 +56,8 @@ class FritzMonitorInternet(object):
         
         self.total_traffic_counter_at_last_alert_interval_tx = 0
         self.total_traffic_counter_at_last_alert_interval_rx = 0
+        self.delta_traffic_counter_since_last_alert_interval_tx = 0
+        self.delta_traffic_counter_since_last_alert_interval_rx = 0
         self.date_and_time = datetime.datetime.now()
         
         self.delta_tx = 0
