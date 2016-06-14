@@ -173,7 +173,8 @@ class FritzMonitorInternet(object):
                 
                 rx_billing_delta = fritztools.format_num(self.total_traffic_in_this_billing_interval_rx)
                 tx_billing_delta = fritztools.format_num(self.total_traffic_in_this_billing_interval_tx)
-                alertText = 'Time since last check: {}\n\n'.format(self.delta_time)
+                alertText = 'Alert Monitoring Interval is {} seconds\n\n'.format(self.alert_interval_seconds)
+                alertText += 'Time since last check: {}\n\n'.format(self.delta_time)
                 alertText += 'During the last alert monitor interval %s have been received and %s has been transmitted\n\n' % (alert_interval_rx,alert_interval_tx)
                 alertText += 'Since start of billing interval : Data Sent = %s\t Data Received = %s\n' %(tx_billing_delta,rx_billing_delta)
                 
