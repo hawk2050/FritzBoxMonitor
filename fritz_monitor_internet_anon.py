@@ -131,7 +131,7 @@ class FritzMonitorInternet(object):
        
         #Internet plan data rollover date/time
         if self.date_and_time.day == 17:
-            if ( (self.date_and_time.hour >= 18) and (self.date_and_time.minute < 12) ):
+            if ( (self.date_and_time.hour == 18) and (self.date_and_time.minute < 12) ):
                 rx_billing_delta = fritztools.format_num(self.total_traffic_in_this_billing_interval_rx)
                 tx_billing_delta = fritztools.format_num(self.total_traffic_in_this_billing_interval_tx )
                 
