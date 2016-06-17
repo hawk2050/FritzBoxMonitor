@@ -131,7 +131,7 @@ class FritzMonitorInternet(object):
        
         #Internet plan data rollover date/time
         if self.date_and_time.day == 17:
-            if ( (self.date_and_time.hour > 18) and (self.date_and_time.hour < 19) ):
+            if ( (self.date_and_time.hour >= 18) and (self.date_and_time.minute < 12) ):
                 rx_billing_delta = fritztools.format_num(self.total_traffic_in_this_billing_interval_rx)
                 tx_billing_delta = fritztools.format_num(self.total_traffic_in_this_billing_interval_tx )
                 
@@ -145,6 +145,7 @@ class FritzMonitorInternet(object):
                 
                 alertText = 'Internet Account Billing Rollover\n\n'
                 alertText += 'Total data during last billing interval : Data Sent = %s\t Data Received = %s' %(tx_billing_delta,rx_billing_delta)
+                self.emailAlert.set_subject("FritzBox: Billing Roll Over!")
                 self.emailAlert.set_text_body(alertText)
                 self.emailAlert.send_email()
         
