@@ -95,8 +95,6 @@ class FritzMonitorInternet(object):
         alertText += 'FritzBox register bytes_received: {}\n\n'.format(self.status.bytes_received)
         alertText += 'FritzBox register bytes_sent: {}\n\n'.format(self.status.bytes_sent)
         alertText += 'During the last monitor interval %s have been received and %s has been transmitted\n\n' % (delta_received,delta_sent)
-        #alertText += 'Total data sent: %s bytes\t Total data received = %s bytes\n\n' % (self.cummulative_tx,self.cummulative_rx)
-        #alertText += 'Total data sent: %s\t Total data received = %s\n\n' % (total_sent,total_received)
         alertText += 'Since start of billing interval : Data Sent = %s\t Data Received = %s' %(tx_billing_delta,rx_billing_delta)
         print alertText
   
@@ -134,10 +132,7 @@ class FritzMonitorInternet(object):
             if ( (self.date_and_time.hour == 18) and (self.date_and_time.minute < 12) ):
                 rx_billing_delta = fritztools.format_num(self.total_traffic_in_this_billing_interval_rx)
                 tx_billing_delta = fritztools.format_num(self.total_traffic_in_this_billing_interval_tx )
-                
-                #self.total_traffic_in_last_billing_interval_tx = self.total_traffic_in_this_billing_interval_tx
-                #self.total_traffic_in_last_billing_interval_rx = self.total_traffic_in_this_billing_interval_rx
-                
+                 
                 #Zero interval traffic total counter
                 self.total_traffic_in_this_billing_interval_tx = 0
                 self.total_traffic_in_this_billing_interval_rx = 0
@@ -150,11 +145,6 @@ class FritzMonitorInternet(object):
                 self.emailAlert.send_email()
         
         
-        
-        #text = "elapsed time: %d seconds, delta received: %d, delta sent: %s\n" % (self.delta_time.seconds,self.delta_rx, self.delta_tx)
-        #print text
-        #print "timer_count = %d\n" % self.timer_count
-        #print "alert_interval_seconds = %d\n" % self.alert_interval_seconds
 	
         
         if self.timer_count >= self.alert_interval_seconds:
@@ -204,13 +194,7 @@ class FritzMonitorInternet(object):
                 self.total_traffic_counter_at_last_alert_interval_tx = data[7]
                
                 f.close()
-#                print 'last_date_and_time = {}'.format(self.last_date_and_time)
-#                print 'last_fritzbox_traffic_counter_rx = {}'.format(self.last_fritzbox_traffic_counter_rx_32bit)
-#                print 'last_fritzbox_traffic_counter_tx = {}'.format(self.last_fritzbox_traffic_counter_tx_32bit)
-#                print 'cummulative rx = {}'.format(self.cummulative_rx)
-#                print 'cummulative tx = {}'.format(self.cummulative_tx)
-#                print 'Billing Interval Start Rx = {}'.format(self.billing_interval_ref_rx)
-#                print 'Billing Interval Start Tx = {}'.format(self.billing_interval_ref_tx)
+               
         else:
             #May be first time the script has run so no previous record
             print 'internet_traffic.pickle file did not exist'
